@@ -155,6 +155,7 @@ def vm_poller():
                     'power_state': vm.__dict__.get("OS-EXT-STS:power_state"),
                     'last_updated': int(time.time())
                 }
+                
                 vm_dict = map_attributes(src="os_vms", dest="csv2", attr_dict=vm_dict)
                 new_vm = Vm(**vm_dict)
                 db_session.merge(new_vm)
