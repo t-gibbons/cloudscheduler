@@ -151,6 +151,8 @@ def vm_poller():
                     'vmid': vm.id,
                     'status': vm.status,
                     'flavor_id': vm.flavor["id"],
+                    'task': vm.__dict__["OS-EXT-STS:task_state"],
+                    'power_state': vm.__dict__["OS-EXT-STS:power_state"],
                     'last_updated': int(time.time())
                 }
                 vm_dict = map_attributes(src="os_vms", dest="csv2", attr_dict=vm_dict)
