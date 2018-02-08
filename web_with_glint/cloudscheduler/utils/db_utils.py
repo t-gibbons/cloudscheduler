@@ -6,7 +6,7 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import select
 from csv2 import config
-from lib.schema import *
+#from lib.schema import *
 
 
 '''

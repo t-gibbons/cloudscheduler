@@ -57,7 +57,7 @@ The Glint User table provides the second layer of authentication and provides ro
 of alternative authenication methods (ssh, user/pw, etc)
 '''
 class Glint_User(models.Model):
-    user_name = models.CharField(max_length=32)
+    username = models.CharField(max_length=32)
     password = models.CharField(max_length=128) #keeping this long for hashes
     # May need another table for these instead of just a generic string field
     # authentication method currently isn't used for anything and may be able to be pruned
@@ -65,6 +65,11 @@ class Glint_User(models.Model):
     common_name = models.CharField(max_length=64, default="")
     distinguished_name = models.CharField(max_length=128)   
     active_group = models.CharField(max_length=64, default="", null=True, blank=True)
+
+
+    class Meta:
+        db_table = 'csv2_user'
+
 
     def __str__(self):
         return "%s" % (self.user_name)
