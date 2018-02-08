@@ -4,7 +4,8 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from .utils import  jsonify_image_list, update_pending_transactions, get_images_for_group, set_images_for_group, process_pending_transactions, process_state_changes, queue_state_change, find_image_by_name, check_delete_restrictions, decrement_transactions, get_num_transactions, repo_proccesed, check_for_repo_changes, set_collection_task, check_for_image_conflicts, set_conflicts_for_group, check_cached_images, add_cached_image, do_cache_cleanup
 from glintwebui.glint_api import repo_connector
-import glintv2.config as config
+from . import config
+
  
 logger = get_task_logger(__name__)
 
