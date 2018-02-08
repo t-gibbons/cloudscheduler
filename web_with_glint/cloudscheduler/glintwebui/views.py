@@ -31,7 +31,7 @@ def getUser(request):
     auth_user_list = Glint_User.objects.all()
     for auth_user in auth_user_list:
         if user == auth_user.common_name:
-            user = auth_user.user_name
+            user = auth_user.username
             break
     return user
 
@@ -40,7 +40,7 @@ def verifyUser(request):
     auth_user = getUser(request)
     auth_user_list = Glint_User.objects.all()
     for user in auth_user_list:
-        if auth_user == user.user_name:
+        if auth_user == user.username:
             return True
 
     return False
@@ -58,7 +58,7 @@ def getSuperUserStatus(request):
         user = request.META.get('REMOTE_USER')
         auth_user_list = Glint_User.objects.all()
         for auth_user in auth_user_list:
-            if user == auth_user.user_name:
+            if user == auth_user.username:
                 user = auth_user.common_name
         try:
             auth_user_obj = User.objects.get(username=user)
@@ -80,7 +80,7 @@ def index(request):
     # It may be better to put it in the urls.py file then pass in the repo/image info
     # If it cannot be accessed it means its deed and needs to be spawned again.
     active_user = getUser(request)
-    user_obj = Glint_User.objects.get(user_name=active_user)
+    user_obj = Glint_User.objects.get(username=active_user)
     user_group = User_Group.objects.filter(user=user_obj)
     if user_group is None:
         #User has access to no groups yet, tell them to contact admin
@@ -109,7 +109,7 @@ def project_details(request, group_name="No groups available", message=None):
     if not verifyUser(request):
         raise PermissionDenied
     active_user = getUser(request)
-    user_obj = Glint_User.objects.get(user_name=active_user)
+    user_obj = Glint_User.objects.get(username=active_user)
     if group_name is None or group_name in "No groups available" :
         # First time user, lets put them at the first project the have access to
         try:
@@ -332,7 +332,7 @@ def manage_repos(request, group_name, feedback_msg=None, error_msg=None):
     if not verifyUser(request):
         raise PermissionDenied
     active_user = getUser(request)
-    user_obj = Glint_User.objects.get(user_name=active_user)
+    user_obj = Glint_User.objects.get(username=active_user)
     repo_list = Group_Resources.objects.filter(group_name=group_name)
 
     user_groups = User_Group.objects.filter(user=user_obj)
@@ -452,14 +452,14 @@ def add_user(request):
 
 
             #check if username exists, if not add it
-            user_found = Glint_User.objects.filter(user_name=user)
+            user_found = Glint_User.objects.filter(username=user)
             logger.error("Found user %s, already in system" % user_found[0])
             #if we get here it means the user already exists
             message = "Unable to add user, username already exists"
             return manage_users(request, message)
         except Exception as e:
             #If we are here we are good since the username doesnt exist. add it and return
-            glint_user = Glint_User(user_name=user, common_name=common_name, distinguished_name=distinguished_name, password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
+            glint_user = Glint_User(username=user, common_name=common_name, distinguished_name=distinguished_name, password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
             glint_user.save()
             message = "User %s added successfully" % user
             return manage_users(request, message)
@@ -495,7 +495,7 @@ def self_update_user(request):
 
         logger.info("Updating info for user %s" % original_user)
         try:
-            glint_user_obj = Glint_User.objects.get(user_name=original_user)
+            glint_user_obj = Glint_User.objects.get(username=original_user)
             glint_user_obj.common_name = common_name
             glint_user_obj.distinguished_name = distinguished_name
             if len(pass1)>3:
@@ -544,8 +544,8 @@ def update_user(request):
 
         logger.info("Updating info for user %s" % original_user)
         try:
-            glint_user_obj = Glint_User.objects.get(user_name=original_user)
-            glint_user_obj.user_name = user
+            glint_user_obj = Glint_User.objects.get(username=original_user)
+            glint_user_obj.username = user
             glint_user_obj.common_name = common_name
             glint_user_obj.distinguished_name = distinguished_name
             if len(pass1)>3:
@@ -599,7 +599,7 @@ def delete_user(request):
     if request.method == 'POST':
         user = request.POST.get('user')
         logger.info("Attempting to delete user %s" % user)
-        user_obj = Glint_User.objects.get(user_name=user)
+        user_obj = Glint_User.objects.get(username=user)
         user_obj.delete()
         message = "User %s deleted." % user
         return manage_users(request, message)
@@ -631,7 +631,7 @@ def manage_users(request, message=None):
 def user_settings(request, message=None):
     if not verifyUser(request):
         raise PermissionDenied
-    user_obj = Glint_User.objects.get(user_name=getUser(request))
+    user_obj = Glint_User.objects.get(username=getUser(request))
 
     context = {
         'message': message,
@@ -651,7 +651,7 @@ def delete_user_group(request):
         user = request.POST.get('user')
         group = request.POST.get('group')
         logger.info("Attempting to delete user %s from group %s" % (user, group))
-        user_obj = Glint_User.objects.get(user_name=user)
+        user_obj = Glint_User.objects.get(username=user)
         user_obj.active_group = None
         user_obj.save()
         grp_obj = Group.objects.get(group_name=group)
@@ -675,7 +675,7 @@ def add_user_group(request):
         grp_obj = None
         logger.info("Attempting to add user %s to group %s" % (user, group))
         try:
-            user_obj = Glint_User.objects.get(user_name=user)
+            user_obj = Glint_User.objects.get(username=user)
             grp_obj = Group.objects.get(group_name=group)
         except Exception as e:
             logger.error("Either user or group does not exist, could not add user_group.")
@@ -795,11 +795,11 @@ def manage_groups(request, message=None):
         #check if this group is in dict yet
         if usr_grp.group_name in group_user_dict:
             #if so append this user to that key
-            group_user_dict[usr_grp.group_name].append(usr_grp.user.user_name)
+            group_user_dict[usr_grp.group_name].append(usr_grp.user.username)
         else:
             #else create new key with user
             group_user_dict[usr_grp.group_name] = list()
-            group_user_dict[usr_grp.group_name].append(usr_grp.user.user_name)
+            group_user_dict[usr_grp.group_name].append(usr_grp.user.username)
 
     context = {
         'group_list': group_list,
