@@ -30,7 +30,7 @@ def getUser(request):
     user = request.META.get('REMOTE_USER')
     auth_user_list = Glint_User.objects.all()
     for auth_user in auth_user_list:
-        if user == auth_user.common_name:
+        if user == auth_user.cert_cn:
             user = auth_user.username
             break
     return user
@@ -59,7 +59,7 @@ def getSuperUserStatus(request):
         auth_user_list = Glint_User.objects.all()
         for auth_user in auth_user_list:
             if user == auth_user.username:
-                user = auth_user.common_name
+                user = auth_user.cert_cn
         try:
             auth_user_obj = User.objects.get(username=user)
             return auth_user_obj.is_superuser
@@ -429,8 +429,7 @@ def add_user(request):
         user = request.POST.get('username')
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
-        common_name = request.POST.get('common_name')
-        distinguished_name = request.POST.get('distinguished_name')
+        cert_cn = request.POST.get('cert_cn')
         logger.info("Adding user %s" % user)
         try:
             # Check that the passwords are valid
@@ -459,7 +458,7 @@ def add_user(request):
             return manage_users(request, message)
         except Exception as e:
             #If we are here we are good since the username doesnt exist. add it and return
-            glint_user = Glint_User(username=user, common_name=common_name, distinguished_name=distinguished_name, password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
+            glint_user = Glint_User(username=user, cert_cn=cert_cn, password=bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a")))
             glint_user.save()
             message = "User %s added successfully" % user
             return manage_users(request, message)
@@ -479,8 +478,7 @@ def self_update_user(request):
             raise PermissionDenied
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
-        common_name = request.POST.get('common_name')
-        distinguished_name = request.POST.get('distinguished_name')
+        cert_cn = request.POST.get('cert_cn')
 
         # Check passwords for length and ensure they are both the same, if left empty the password wont be updated
         if pass1 and pass2:
@@ -496,8 +494,7 @@ def self_update_user(request):
         logger.info("Updating info for user %s" % original_user)
         try:
             glint_user_obj = Glint_User.objects.get(username=original_user)
-            glint_user_obj.common_name = common_name
-            glint_user_obj.distinguished_name = distinguished_name
+            glint_user_obj.cert_cn = cert_cn
             if len(pass1)>3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
@@ -523,8 +520,7 @@ def update_user(request):
         user = request.POST.get('username')
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
-        common_name = request.POST.get('common_name')
-        distinguished_name = request.POST.get('distinguished_name')
+        cert_cn = request.POST.get('cert_cn')
         admin_status = request.POST.get('admin')
         if admin_status is None:
             admin_status = False
@@ -546,8 +542,7 @@ def update_user(request):
         try:
             glint_user_obj = Glint_User.objects.get(username=original_user)
             glint_user_obj.username = user
-            glint_user_obj.common_name = common_name
-            glint_user_obj.distinguished_name = distinguished_name
+            glint_user_obj.cert_cn = cert_cn
             if len(pass1)>3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
@@ -558,7 +553,7 @@ def update_user(request):
             return manage_users(request)
         try:
             #its possible that one or both objects are still missing from the auth database
-            user_obj = User.objects.get(username=common_name)
+            user_obj = User.objects.get(username=cert_cn)
             user_obj.is_superuser = admin_status
             user_obj.save()
             user_obj = User.objects.get(username=user)
@@ -573,7 +568,7 @@ def update_user(request):
                 user_obj = None
             # If un/pw authentication is also missing lets make both from scratch
             if user_obj is None:
-                new_user = User(username=common_name, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
+                new_user = User(username=cert_cn, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
                 new_user.save()
                 new_user = User(username=user, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
                 new_user.save()
@@ -582,7 +577,7 @@ def update_user(request):
             else:
                 user_obj.is_superuser = admin_status
                 user_obj.save()
-                new_user = User(username=common_name, is_superuser=admin_status, is_staff=user_obj.is_staff,is_active=user_obj.is_active, date_joined=user_obj.date_joined)
+                new_user = User(username=cert_cn, is_superuser=admin_status, is_staff=user_obj.is_staff,is_active=user_obj.is_active, date_joined=user_obj.date_joined)
                 new_user.save()
 
         return manage_users(request, message) 
