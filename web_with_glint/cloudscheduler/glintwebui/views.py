@@ -30,20 +30,17 @@ def getUser(request):
     user = request.META.get('REMOTE_USER')
     auth_user_list = Glint_User.objects.all()
     for auth_user in auth_user_list:
-        if user == auth_user.cert_cn:
-            user = auth_user.username
-            break
-    return user
+        if user == auth_user.cert_cn or user == auth_user.username:
+            return auth_user
+    return False
 
 
 def verifyUser(request):
     auth_user = getUser(request)
-    auth_user_list = Glint_User.objects.all()
-    for user in auth_user_list:
-        if auth_user == user.username:
-            return True
-
-    return False
+    if auth_user:
+        return True
+    else:
+        return False
 
 def getSuperUserStatus(request):
     auth_user = getUser(request)
@@ -59,8 +56,7 @@ def index(request):
     # The one drawback is if someone tries to go directly to another page before hitting this one
     # It may be better to put it in the urls.py file then pass in the repo/image info
     # If it cannot be accessed it means its deed and needs to be spawned again.
-    active_user = getUser(request)
-    user_obj = Glint_User.objects.get(username=active_user)
+    user_obj = getUser(request)
     user_group = User_Group.objects.filter(user=user_obj)
     if user_group is None:
         #User has access to no groups yet, tell them to contact admin
@@ -74,7 +70,7 @@ def index(request):
 
     context = {
         'groups': User_Group.objects.all(),
-        'user': getUser(request),
+        'user': getUser(request).username,
         'all_users': User.objects.all(),
     }
     return render(request, 'glintwebui/index.html', context)
@@ -88,8 +84,7 @@ def project_details(request, group_name="No groups available", message=None):
     # this means we now have to create a new unique image set that is just the image names
     if not verifyUser(request):
         raise PermissionDenied
-    active_user = getUser(request)
-    user_obj = Glint_User.objects.get(username=active_user)
+    user_obj = getUser(request)
     if group_name is None or group_name in "No groups available" :
         # First time user, lets put them at the first project the have access to
         try:
@@ -163,7 +158,7 @@ def add_repo(request, group_name):
 
         #Check if the form data is valid
         if form.is_valid():
-            logger.info("Attempting to add new repo for User:" + user)
+            logger.info("Attempting to add new repo for User:" + user.username)
             # all data is exists, check if the repo is valid
             validate_resp = validate_repo(auth_url=form.cleaned_data['auth_url'], tenant_name=form.cleaned_data['tenant'], username=form.cleaned_data['username'], password=form.cleaned_data['password'], user_domain_name=form.cleaned_data['user_domain_name'], project_domain_name=form.cleaned_data['project_domain_name'])
             if (validate_resp[0]):
@@ -241,7 +236,7 @@ def save_images(request, group_name):
             #these check lists will have all of the images that are checked and need to be cross referenced
             #against the images stored in redis to detect changes in state
             check_list = request.POST.getlist(repo.cloud_name)
-            parse_pending_transactions(group_name=group_name, cloud_name=repo.cloud_name, image_list=check_list, user=user)
+            parse_pending_transactions(group_name=group_name, cloud_name=repo.cloud_name, image_list=check_list, user=user.username)
 
         #give collection thread a couple seconds to process the request
         #ideally this will be removed in the future
@@ -266,7 +261,7 @@ def save_hidden_images(request, group_name):
         # check if we need to change any of the hidden states
         for repo in repo_list:
             check_list = request.POST.getlist(repo.cloud_name)
-            parse_hidden_images(group_name=group_name, cloud_name=repo.cloud_name, image_list=check_list, user=user)
+            parse_hidden_images(group_name=group_name, cloud_name=repo.cloud_name, image_list=check_list, user=user.username)
 
     message = "Please allow glint a few seconds to proccess your request."
     return project_details(request=request, group_name=group_name, message=message)
@@ -285,14 +280,14 @@ def resolve_conflict(request, group_name, cloud_name):
             if key != 'csrfmiddlewaretoken':
                 # check if the name has been changed, if it is different, send update
                 if value != image_dict[repo_alias][key]['name']:
-                    change_image_name(repo_obj=repo_obj, img_id=key, old_img_name=image_dict[repo_alias][key]['name'], new_img_name=value, user=user)
+                    change_image_name(repo_obj=repo_obj, img_id=key, old_img_name=image_dict[repo_alias][key]['name'], new_img_name=value, user=user.username)
                     changed_names=changed_names+1
         if changed_names == 0:
             # Re render resolve conflict page
             # for now this will do nothing and we trust that the user will change the name.
             context = {
                 'groups': User_Group.objects.all(),
-                'user': user,
+                'user': user.username,
                 'all_users': User.objects.all(),
             }
             return render(request, 'glintwebui/index.html', context)
@@ -311,8 +306,7 @@ def resolve_conflict(request, group_name, cloud_name):
 def manage_repos(request, group_name, feedback_msg=None, error_msg=None):
     if not verifyUser(request):
         raise PermissionDenied
-    active_user = getUser(request)
-    user_obj = Glint_User.objects.get(username=active_user)
+    user_obj = getUser(request)
     repo_list = Group_Resources.objects.filter(group_name=group_name)
 
     user_groups = User_Group.objects.filter(user=user_obj)
@@ -454,7 +448,7 @@ def self_update_user(request):
 
     if request.method == 'POST':
         original_user = request.POST.get('old_usr')
-        if not original_user == getUser(request):
+        if not original_user == getUser(request).username:
             raise PermissionDenied
         pass1 = request.POST.get('pass1')
         pass2 = request.POST.get('pass2')
@@ -579,7 +573,7 @@ def manage_users(request, message=None):
 def user_settings(request, message=None):
     if not verifyUser(request):
         raise PermissionDenied
-    user_obj = Glint_User.objects.get(username=getUser(request))
+    user_obj = getUser(request)
 
     context = {
         'message': message,
@@ -882,7 +876,7 @@ def upload_image(request, group_name):
         for cloud in cloud_name_list:
             logger.info("Queing image upload to %s" % cloud)
             transaction = {
-                'user': user,
+                'user': user.username,
                 'action':  'upload',
                 'group_name': group_name,
                 'repo': cloud,
@@ -953,7 +947,7 @@ def upload_image(request, group_name):
         user = getUser(request)
         for cloud in cloud_name_list:
             transaction = {
-                'user': user,
+                'user': user.username,
                 'action':  'upload',
                 'group_name': group_name,
                 'repo': cloud,
