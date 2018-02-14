@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
 
-import datetime
 
+import datetime
 
 
 '''
@@ -54,29 +54,6 @@ class Group_Resources(models.Model):
     def __str__(self):
         return self.account_name + ": " + self.tenant
 
-'''
-The Glint User table provides the second layer of authentication and provides room for future developments
-of alternative authenication methods (ssh, user/pw, etc)
-'''
-class Glint_User(models.Model):
-    username = models.CharField(max_length=32)
-    password = models.CharField(max_length=128) #keeping this long for hashes
-    # May need another table for these instead of just a generic string field
-    # authentication method currently isn't used for anything and may be able to be pruned
-    #authentication_method = models.CharField(max_length=32, default="x509")
-    cert_cn = models.CharField(max_length=64, default="")
-    active_group = models.CharField(max_length=64, default="", null=True, blank=True)
-    join_date = models.DateField(default=datetime.date.today, null=True)
-    is_superuser = models.BooleanField(default=0)
-
-    class Meta:
-        db_table = 'csv2_user'
-
-
-    def __str__(self):
-        return "%s" % (self.user_name)
-
-
 
 class Group(models.Model):
     group_name = models.CharField(max_length=32)
@@ -92,7 +69,7 @@ Attributes:
 '''
 class User_Group(models.Model):
     group_name = models.ForeignKey(Group, on_delete=models.CASCADE)
-    user = models.ForeignKey(Glint_User, on_delete=models.CASCADE)
+    user = models.ForeignKey("csv2.user", on_delete=models.CASCADE)
     last_used = models.DateTimeField(null=True, blank=True)
 
 
