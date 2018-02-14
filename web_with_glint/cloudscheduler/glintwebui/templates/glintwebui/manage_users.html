@@ -41,12 +41,11 @@
 {% endif %}
 <div>
 	<table class="image_matrix">
-		<tr><th>Username</th><th>Common Name</th><th>Distinguished Name</th><th/></tr>
+		<tr><th>Username</th><th>Common Name</th></tr>
 		{% for user in user_list %}
 			<tr>
 				<td>{{user.user_name}}</td>
-				<td>{{user.common_name}}</td>
-				<td>{{user.distinguished_name}}</td>
+				<td>{{user.cert_cn}}</td>
 				<td><button type="button" class="btn btn-info" data-toggle="collapse" data-target="#{{user.user_name|strip}}" style="margin-right: 5px"> Edit </button>
 				<div class="collapse" id="{{user.user_name|strip}}" style="width: 400px">
 					<form name="{{user.user_name|strip}}" action="/ui/update_user/" method="post">
@@ -58,15 +57,13 @@
                             <td><input type="password" name="pass1" id="" value="" /></td></tr>
                             <tr><td title="Leave blank to leave password unchanged"><label for="pass2">Repeat Password</label></td>
                             <td><input type="password" name="pass2" id="" value="" /></td></tr>
-						    <tr><td><label for="common_name">Common Name</label></td>
-						    <td><input type="text" name="common_name" id="" value="{{user.common_name}}" /></td></tr>
-						    <tr><td><label for="distinguished_name">Distinguished Name</label></td>
-						    <td><input type="text" name="distinguished_name" id="" value="{{user.distinguished_name}}" /></td></tr>
+						    <tr><td><label for="cert_cn">Common Name</label></td>
+						    <td><input type="text" name="cert_cn" id="" value="{{user.cert_cn}}" /></td></tr>
 						    <tr><td><label for="admin">Administrator</label></td>
-						    {% if user.common_name in admin_list %}
-						    	<td><input name="admin" type="checkbox" value="{{user.common_name}}" checked></td>
+						    {% if user.username in admin_list %}
+						    	<td><input name="admin" type="checkbox" value="{{user.cert_cn}}" checked></td>
 						    {% else %}
-						    	<td><input name="admin" type="checkbox" value="{{user.common_name}}"></td>
+						    	<td><input name="admin" type="checkbox" value="{{user.cert_cn}}"></td>
 						    {% endif %}
 							</tr>
 						    <input type="hidden" name="old_usr" value="{{user.user_name}}" />
@@ -93,10 +90,8 @@
                 <td><input type="password" name="pass1" id="" value="" /></td></tr>
                 <tr><td><label for="pass2">Repeat Password</label></td>
                 <td><input type="password" name="pass2" id="" value="" /></td></tr>
-			    <tr><td><label for="common_name">Common Name</label></td>
-			    <td><input type="text" name="common_name" id="" value="" /></td></tr>
-			    <tr><td><label for="distinguished_name">Distinguished Name</label></td>
-			    <td><input type="text" name="distinguished_name" id="" value="" /></td></tr>
+			    <tr><td><label for="cert_cn">Common Name</label></td>
+			    <td><input type="text" name="cert_cn" id="" value="" /></td></tr>
 
 			    <tr><td><input type="submit" value="Add User" /></td></tr>
 			</table>

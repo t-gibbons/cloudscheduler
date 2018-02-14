@@ -67,6 +67,7 @@ class Glint_User(models.Model):
     cert_cn = models.CharField(max_length=64, default="")
     active_group = models.CharField(max_length=64, default="", null=True, blank=True)
     join_date = models.DateField(default=datetime.date.today, null=True)
+    is_superuser = models.BooleanField(default=0)
 
     class Meta:
         db_table = 'csv2_user'

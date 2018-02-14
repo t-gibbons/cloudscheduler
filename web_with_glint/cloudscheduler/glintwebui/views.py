@@ -47,27 +47,7 @@ def verifyUser(request):
 
 def getSuperUserStatus(request):
     auth_user = getUser(request)
-    auth_user_obj = User.objects.get(username=auth_user)
-    if auth_user_obj.is_superuser:
-        return True
-
-    else:
-        # Since apache registers username and common name entries differently we also have to
-        # check if the user's table entry for a common name, this probably isn't needed since
-        # both table rows are updated on any change but better safe than sorry
-        user = request.META.get('REMOTE_USER')
-        auth_user_list = Glint_User.objects.all()
-        for auth_user in auth_user_list:
-            if user == auth_user.username:
-                user = auth_user.cert_cn
-        try:
-            auth_user_obj = User.objects.get(username=user)
-            return auth_user_obj.is_superuser
-        except Exception as e:
-            # if this fails it means the user has never authenticated with a certificate
-            # and that they do not have super user status
-            return False
-
+    return auth_user.is_superuser
 
 
 def index(request):
@@ -543,6 +523,7 @@ def update_user(request):
             glint_user_obj = Glint_User.objects.get(username=original_user)
             glint_user_obj.username = user
             glint_user_obj.cert_cn = cert_cn
+            glint_user_obj.is_superuser = admin_status
             if len(pass1)>3:
                 glint_user_obj.password = bcrypt.hashpw(pass1.encode(), bcrypt.gensalt(prefix=b"2a"))
             glint_user_obj.save()
@@ -551,34 +532,6 @@ def update_user(request):
             logger.error("Unable to retrieve user %s, there may be a database inconsistency." % original_user)
             logger.error(e)
             return manage_users(request)
-        try:
-            #its possible that one or both objects are still missing from the auth database
-            user_obj = User.objects.get(username=cert_cn)
-            user_obj.is_superuser = admin_status
-            user_obj.save()
-            user_obj = User.objects.get(username=user)
-            user_obj.is_superuser = admin_status
-            user_obj.save()
-        except Exception as e:
-            #if we get here the user has never connected with a certificate before so we need to manually insert them into the auth db
-            #first check if they have done a password authentication
-            try:
-                user_obj = User.objects.get(username=user)
-            except User.DoesNotExist:
-                user_obj = None
-            # If un/pw authentication is also missing lets make both from scratch
-            if user_obj is None:
-                new_user = User(username=cert_cn, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
-                new_user.save()
-                new_user = User(username=user, is_superuser=admin_status, is_staff=admin_status,is_active=True, date_joined=datetime.datetime.now())
-                new_user.save()
-
-            #else we have the un/pw auth and we can copy it
-            else:
-                user_obj.is_superuser = admin_status
-                user_obj.save()
-                new_user = User(username=cert_cn, is_superuser=admin_status, is_staff=user_obj.is_staff,is_active=user_obj.is_active, date_joined=user_obj.date_joined)
-                new_user.save()
 
         return manage_users(request, message) 
     else:
@@ -609,7 +562,7 @@ def manage_users(request, message=None):
     if not getSuperUserStatus(request):
         raise PermissionDenied
     user_list = Glint_User.objects.all()
-    user_obj_list = User.objects.filter(is_superuser=1)
+    user_obj_list = Glint_User.objects.filter(is_superuser=1)
     admin_list = []
     for usr in user_obj_list:
         admin_list.append(usr.username)
