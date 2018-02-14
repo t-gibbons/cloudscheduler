@@ -7,7 +7,8 @@ from django.core.exceptions import PermissionDenied
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
-from .models import Group_Resources, User_Group, Glint_User, Group
+from .models import Group_Resources, User_Group, Group
+from csv2.models import user as Glint_User
 from .forms import addRepoForm
 from .glint_api import repo_connector, validate_repo, change_image_name
 from .utils import get_unique_image_list, get_images_for_group, parse_pending_transactions, build_id_lookup_dict, repo_modified, get_conflicts_for_group, find_image_by_name, add_cached_image, check_cached_images, increment_transactions, check_for_existing_images, get_hidden_image_list, parse_hidden_images
