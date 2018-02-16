@@ -70,7 +70,6 @@ Attributes:
 class User_Group(models.Model):
     group_name = models.ForeignKey(Group, on_delete=models.CASCADE)
     user = models.ForeignKey("csv2.user", on_delete=models.CASCADE)
-    last_used = models.DateTimeField(null=True, blank=True)
 
 
     def __str__(self):
