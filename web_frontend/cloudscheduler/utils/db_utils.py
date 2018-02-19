@@ -90,9 +90,14 @@ def get_group_resources(group_name):
     engine = create_engine("mysql://" + config.db_user + ":" + config.db_password + "@" + config.db_host + ":" + str(config.db_port) + "/" + config.db_name)
     conn = engine.connect()
     s = select([view_group_resources]).where(view_group_resources.c.group_name == group_name)
-    group_resources_list = conn.execute(s)
-    return group_resources_list
+    return query_to_list(conn.execute(s))
 
+
+def query_to_list(query_object):
+    query_list=[]
+    for row in query_object:
+        query_list.append(row)
+    return query_list
 
 # may be best to query the view instead of the resources table
 def get_counts(group_name=None):
@@ -157,7 +162,7 @@ def get_condor_machines(filter=None):
 
 
 # add new group resources
-def put_group_resources(action, group, cloud, url, uname, pword):
+def put_group_resources(action, group, cloud, url, uname, pword, keyname, cacertificate, region, user_domain_name, project_domain_name, cloud_type, cores_ctl, ram_ctl):
     engine = create_engine("mysql://" + config.db_user + ":" + config.db_password + "@" + config.db_host + ":" + str(config.db_port) + "/" + config.db_name)
 
     metadata = MetaData(bind=engine)
@@ -181,9 +186,8 @@ def put_group_resources(action, group, cloud, url, uname, pword):
             keyname="",
             cacertificate="",
             region="",
-            userdomainname="",
-            projectdomainname="",
-            extrayaml="",  
+            user_domain_name="",
+            project_domain_name="", 
             cloud_type="",
             )
 
@@ -195,13 +199,14 @@ def put_group_resources(action, group, cloud, url, uname, pword):
             project="default",
             username=uname,
             password=pword,
-            keyname="",
-            cacertificate="",
-            region="",
-            userdomainname="",
-            projectdomainname="",
-            extrayaml="",  
-            cloud_type="",
+            keyname=keyname,
+            cacertificate=cacertificate,
+            region=region,
+            user_domain_name=user_domain_name,
+            project_domain_name=project_domain_name, 
+            cloud_type=cloud_type,
+            cores_ctl=cores_ctl,
+            ram_ctl=ram_ctl
             )
     elif action=="delete":
         ins = table.delete(table.c.cloud_name==cloud)

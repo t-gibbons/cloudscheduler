@@ -18,19 +18,19 @@ select
   keyname,
   cacertificate,
   region,
-  userdomainname,
-  projectdomainname,
+  user_domain_name,
+  project_domain_name,
   cloud_type,
 
   /*
   ** Use case statements to determine available resources for cores and ram. 
   */
-  case when cores_max<1 then -1 else case when cores_ctl<0 then cores_max-cores_used else cores_ctl-cores_used end end as cores,
-  case when ram_max<1 then -1 else case when ram_ctl<0 then ram_max-ram_used else ram_ctl-ram_used end end as ram,
+  case when cores_ctl=-1 or cores_ctl>cores_max then cores_max-cores_used else cores_ctl-cores_used end as cores,
+  case when ram_ctl=-1 or ram_ctl>ram_max then ram_max-ram_used else ram_ctl-ram_used end as ram,
 
   name as flavor_name,
   id as flavor_id,
-  vcpus as flavor_cores,
+  cores as flavor_cores,
   cf.ram as flavor_ram,
   disk as flavor_disk,
   ephemeral_disk as flavor_scratch,
